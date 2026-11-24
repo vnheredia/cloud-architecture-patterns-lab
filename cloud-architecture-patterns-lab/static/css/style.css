@@ -1,0 +1,287 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700');
+
+:root {
+  --bg: #08111f;
+  --panel: #101e30;
+  --line: #24364e;
+  --text: #edf4ff;
+  --muted: #98a9c2;
+  --blue: #68a6ff;
+  --mint: #80e0c2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 15% 0%, #142a48, transparent 38%), var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.shell {
+  max-width: 1180px;
+  margin: auto;
+  padding: 34px 28px 20px;
+}
+
+.hero {
+  padding: 38px 0;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: var(--blue);
+  margin: 0 0 14px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+h1 {
+  font-size: clamp(38px, 6vw, 68px);
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin: 0;
+}
+
+h1 span {
+  color: var(--blue);
+}
+
+.hero > p:not(.eyebrow) {
+  color: var(--muted);
+  margin: 20px 0;
+}
+
+.meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.meta span,
+.ready {
+  border: 1px solid var(--line);
+  border-radius: 50px;
+  padding: 8px 12px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #bdcde0;
+}
+
+.section {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.section h2 {
+  font-size: 25px;
+  margin: 0;
+}
+
+.ready {
+  color: #b8e8d7;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: linear-gradient(155deg, #14263b, #0e1b2c);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: #426b97;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items:center;
+  background: #1d3655;
+  border-radius: 12px;
+  font-size: 21px;
+}
+
+.num {
+  font-size: 10px;
+  color: #647e9c;
+  letter-spacing: 1px;
+}
+
+.card small {
+  color: var(--mint);
+  font-weight: 700;
+}
+
+.card h3 {
+  font-size: 17px;
+  margin: 8px 0;
+}
+
+.card p {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+
+.run {
+  margin-top: auto;
+  border: 1px solid #365270;
+  background: #1a2d45;
+  color: #e8f3ff;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font: 600 12px 'DM Sans', sans-serif;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.run:hover {
+  background: #244367;
+}
+
+.run:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.console {
+  margin-top: 22px;
+  background: #080f19;
+  border: 1px solid #20324a;
+  border-radius: 15px;
+  padding: 20px;
+  min-height: 190px;
+}
+
+.console-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.console-head h2 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.lights {
+  font-size: 12px;
+  color: #6686a6;
+}
+
+.placeholder {
+  color: #73869e;
+  padding: 24px 0;
+  font-size: 13px;
+}
+
+.summary {
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid #294762;
+  background: #112337;
+  border-radius: 9px;
+  color: #cde0f5;
+  font-size: 13px;
+}
+
+.logs {
+  display: grid;
+  gap: 7px;
+}
+
+.log {
+  font: 12px ui-monospace, Consolas, monospace;
+  color: #9fc7ed;
+  padding: 8px 10px;
+  border-left: 2px solid #416e98;
+  background: #0d1927;
+  border-radius: 3px;
+}
+
+.log:before {
+  content: '› ';
+  color: var(--mint);
+}
+
+.note {
+  color: #c5a878;
+  font-size: 11px;
+  margin-top: 12px;
+}
+
+.hidden {
+  display: none;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #60748d;
+  font-size: 11px;
+  padding: 22px 2px;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .shell {
+    padding: 20px 15px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    align-items: start;
+    gap: 10px;
+    flex-direction: column;
+  }
+
+  .card {
+    min-height: 205px;
+  }
+
+  footer {
+    flex-direction: column;
+  }
+}

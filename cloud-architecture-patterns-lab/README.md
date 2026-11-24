@@ -1,39 +1,26 @@
-# Cloud Architecture Patterns Lab
+# Cloud Architecture Patterns Lab — Web Interface
 
-A beginner-friendly, single Python program that demonstrates 8 cloud architecture patterns and concepts from a menu.
+A beginner-friendly Flask dashboard for running 8 educational cloud architecture demos.
 
-## Requirements
-- Python 3.8 or newer
-- No third-party packages required
+## Run locally
+1. Install Python 3.9+.
+2. Open this folder in VS Code.
+3. In terminal, create a virtual environment: `py -m venv venv`
+4. Activate on Windows PowerShell: `.\venv\Scripts\Activate`
+5. Install: `pip install -r requirements.txt`
+6. Start: `python app.py`
+7. Open the local address printed by Flask, usually `http://127.0.0.1:5000`.
 
-## Run
-```bash
-python cloud_lab.py
-```
-On Windows, if needed:
-```bash
-py cloud_lab.py
-```
 
 ## Labs
 1. Circuit Breaker
-2. Retry
-3. Timeout
-4. Serverless / AWS Lambda and ECS (local simulation)
-5. API Gateway, Load Balancer, Reverse Proxy (routing simulation)
-6. Hub-and-Spoke (network topology simulation)
-7. Lift-and-Shift (migration simulation)
-8. Bastion Host (access-flow simulation)
+2. Retry Pattern
+3. Timeout Pattern
+4. Serverless & Containers (Lambda / ECS)
+5. Gateway, Load Balancer & Reverse Proxy
+6. Hub-and-Spoke
+7. Lift-and-Shift
+8. Bastion Host
 
-## Important note
-Labs 1-3 are behavioral demos in Python. Labs 4-8 are local educational simulations: they do not create AWS resources, Docker containers, VPCs, EC2 instances, SSH sessions, or incur AWS charges. They demonstrate the concepts and flow only. For a real AWS deployment, these would need separate configuration and evidence.
-
-## Suggested evidence
-Take screenshots of:
-- The main menu
-- Each lab's execution output
-- The final successful/recovery result for Circuit Breaker and Retry
-- Routing output for Lab 5
-- The topology output for Lab 6
-- The migration before/after for Lab 7
-- The access flow for Lab 8
+## Scope note
+This is an educational interface. The demonstrations are local simulations and do not provision AWS resources. Lab 3 does not cancel a real request; it shows timeout behavior. AWS labs must be deployed separately to claim real cloud execution.
