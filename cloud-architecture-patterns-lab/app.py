@@ -1,122 +1,45 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, render_template, jsonify, request
+from labs.simulations import run_lab
 
 app = Flask(__name__)
 
 LABS = [
-    (1, "Circuit Breaker", "Resilience", "⚡", "Protect a service from repeated failures by opening the circuit."),
-    (2, "Retry Pattern", "Resilience", "🔁", "Retry temporary failures until success or a maximum attempt count."),
-    (3, "Timeout Pattern", "Resilience", "⏱️", "Stop waiting when an operation exceeds its allowed duration."),
-    (4, "Serverless & Containers", "AWS", "☁️", "Compare event-driven Lambda execution with an ECS container task."),
-    (5, "Gateway, Load Balancer & Proxy", "Traffic", "🔀", "Route requests to backends and distribute traffic between instances."),
-    (6, "Hub-and-Spoke", "Networking", "🕸️", "Connect several networks through a central hub."),
-    (7, "Lift-and-Shift", "Migration", "🚚", "Move an application to cloud with minimal changes."),
-    (8, "Bastion Host", "Security", "🛡️", "Reach a private server through an authenticated jump host."),
+ {"id":1,"slug":"circuit-breaker","name":"Circuit Breaker","category":"Resilience","icon":"⚡","tag":"Fault isolation","summary":"Stops repeated calls to an unhealthy dependency and gives it time to recover.","description":"Circuit Breaker protects a caller from repeatedly invoking a service that is failing. It moves between Closed, Open, and Half-Open states so failures do not cascade.","how":"Closed allows calls and counts failures. When the failure threshold is reached, Open rejects calls without contacting the dependency. After the recovery window, Half-Open permits a probe; a successful probe closes the circuit.","use":"Remote APIs, payment services, databases, and microservice dependencies.","aws":"AWS Step Functions can model workflow-level recovery. Application-level circuit breakers can also be implemented in service code; AWS SDK retry behavior alone is not a circuit breaker.","controls":[{"name":"failure_threshold","label":"Failures before opening","min":1,"max":5,"default":3},{"name":"probe_success","label":"Recovery probe succeeds","type":"select","options":[{"value":"true","label":"Yes"},{"value":"false","label":"No"}]}],"diagram":{"nodes":["Client","Circuit Breaker","Service"],"edges":[[0,1],[1,2]],"note":"When Open, the breaker rejects calls before they reach the service."}},
+ {"id":2,"slug":"retry","name":"Retry Pattern","category":"Resilience","icon":"🔁","tag":"Transient failures","summary":"Retries transient failures with a bounded policy and backoff.","description":"Retry repeats an operation when a failure is likely temporary. It must be bounded and applied carefully to avoid duplicate side effects or amplifying overload.","how":"A request is attempted. If it fails transiently, the client waits according to the retry policy and tries again, stopping after success or the maximum number of attempts. This demo uses exponential backoff values without real waiting.","use":"Temporary network errors, throttling, transient service errors, and recoverable operations.","aws":"AWS SDKs include retry behavior for many service calls; Step Functions supports retry rules for task failures.","controls":[{"name":"failures_before_success","label":"Failures before success","min":0,"max":5,"default":2},{"name":"max_attempts","label":"Maximum attempts","min":1,"max":6,"default":4},{"name":"base_delay","label":"Initial backoff (seconds)","min":1,"max":4,"default":1}],"diagram":{"nodes":["Client","Attempt 1","Attempt 2","Service"],"edges":[[0,1],[1,2],[2,3]],"note":"Delay grows between attempts; no actual sleep is used in this lab."}},
+ {"id":3,"slug":"timeout","name":"Timeout Pattern","category":"Resilience","icon":"⏱️","tag":"Bounded waiting","summary":"Sets a maximum wait time for an operation or response.","description":"Timeouts bound how long a caller waits. They help free resources and prevent requests from hanging indefinitely, but should be set based on expected latency and downstream behavior.","how":"The simulation compares the configured timeout with two sample response durations. A response within the limit succeeds; one that exceeds it is marked timed out.","use":"HTTP requests, database calls, external APIs, and service-to-service communication.","aws":"Lambda has configurable execution timeouts. API Gateway integrations and clients also have timeout considerations.","controls":[{"name":"timeout_ms","label":"Timeout limit (ms)","min":500,"max":5000,"step":500,"default":2000},{"name":"fast_response_ms","label":"Fast service response (ms)","min":100,"max":3000,"step":100,"default":800},{"name":"slow_response_ms","label":"Slow service response (ms)","min":500,"max":8000,"step":500,"default":3500}],"diagram":{"nodes":["Client","Timeout Guard","Service","Response"],"edges":[[0,1],[1,2],[2,3]],"note":"The caller stops waiting when the deadline is exceeded."}},
+ {"id":4,"slug":"serverless-containers","name":"Serverless & Containers","category":"Infrastructure","icon":"☁️","tag":"Compute choices","summary":"Compare event-driven functions with containerized application workloads.","description":"Serverless functions run code in response to events without the user managing servers. Containers package applications and their dependencies consistently; an orchestrator schedules and manages container workloads.","how":"The demo traces a sample event to a Lambda-like function and separately shows a container image being scheduled as an ECS task. These are conceptual local simulations, not AWS deployments.","use":"Functions for event processing, automation, short tasks; containers for APIs, workers, and portable application workloads.","aws":"AWS Lambda and Amazon ECS (often using Docker-compatible images). ECS can run on AWS Fargate or EC2 capacity.","controls":[{"name":"event_name","label":"Event name","type":"text","default":"order.created"},{"name":"container_tasks","label":"Container tasks","min":1,"max":5,"default":2}],"diagram":{"nodes":["Event Source","Lambda Function","Container Image","ECS Service"],"edges":[[0,1],[2,3]],"note":"Two compute models shown side by side: event-driven function and managed container service."}},
+ {"id":5,"slug":"gateway-proxy-balancer","name":"Gateway, Proxy & Load Balancer","category":"Networking","icon":"🚦","tag":"Traffic routing","summary":"Explore API entry points, reverse proxies, and traffic distribution.","description":"API Gateway manages API entry and policies; a reverse proxy forwards requests to backend servers; a load balancer distributes requests among healthy targets. They overlap in some capabilities but are not interchangeable concepts.","how":"The simulation sends a batch of requests through an entry component and distributes them across available backend nodes using Round Robin.","use":"Web APIs, scalable application backends, service routing, TLS termination, and traffic distribution.","aws":"Amazon API Gateway and Elastic Load Balancing services. Reverse proxy behavior may be implemented with software such as NGINX or application infrastructure.","controls":[{"name":"request_count","label":"Requests to distribute","min":3,"max":30,"default":12},{"name":"backend_count","label":"Backend servers","min":2,"max":6,"default":3}],"diagram":{"nodes":["Client","API Entry / Proxy","Backend A","Backend B","Backend C"],"edges":[[0,1],[1,2],[1,3],[1,4]],"note":"Requests are distributed in sequence across backend nodes in this demo."}},
+ {"id":6,"slug":"hub-spoke","name":"Hub-and-Spoke","category":"Networking","icon":"🕸️","tag":"Network topology","summary":"Centralizes connectivity between multiple network spokes.","description":"Hub-and-Spoke connects separate networks through a central hub. It simplifies shared connectivity and central controls, while routing and segmentation rules determine which spokes can communicate.","how":"The local simulation builds a hub with multiple spokes, demonstrates a route between two spokes through the hub, and displays the path.","use":"Multi-account cloud networks, branch connectivity, shared services, and centralized inspection.","aws":"Amazon VPC with AWS Transit Gateway is a common AWS implementation for hub-and-spoke connectivity.","controls":[{"name":"spoke_count","label":"Number of spokes","min":2,"max":6,"default":4},{"name":"allow_spoke_to_spoke","label":"Spoke-to-spoke routing","type":"select","options":[{"value":"true","label":"Allowed via hub"},{"value":"false","label":"Blocked"}]}],"diagram":{"nodes":["Central Hub","Spoke 1","Spoke 2","Spoke 3","Spoke 4"],"edges":[[0,1],[0,2],[0,3],[0,4]],"note":"Spokes attach to the hub; spoke-to-spoke traffic can be controlled by routing policy."}},
+ {"id":7,"slug":"lift-shift","name":"Lift-and-Shift Migration","category":"Migration","icon":"📦","tag":"Rehosting","summary":"Moves a workload to cloud infrastructure with minimal redesign.","description":"Lift-and-shift, also called rehosting, moves an existing application or workload to cloud infrastructure while making relatively few architectural changes. Compatibility and dependency validation remain essential.","how":"The demo walks through inventory, readiness checks, replication or transfer, cutover, and validation stages. It illustrates the process but does not copy real servers.","use":"Migration when speed is prioritized or when modernization is planned after moving.","aws":"Amazon EC2 is a possible destination for rehosted workloads. AWS migration tools and services may assist depending on the migration scenario.","controls":[{"name":"server_count","label":"Servers to migrate","min":1,"max":8,"default":3},{"name":"validation_pass","label":"Post-migration validation","type":"select","options":[{"value":"true","label":"Pass"},{"value":"false","label":"Fail (rollback)"}]}],"diagram":{"nodes":["On-prem Servers","Inventory & Readiness","Migration","AWS EC2","Validation"],"edges":[[0,1],[1,2],[2,3],[3,4]],"note":"Rehosting changes hosting location while keeping the workload largely unchanged."}},
+ {"id":8,"slug":"bastion","name":"Bastion Host","category":"Security","icon":"🛡️","tag":"Controlled access","summary":"Provides an intermediate access point to private servers.","description":"A bastion host is a hardened intermediary system used to control administrative access to private resources. It should be tightly restricted, monitored, and maintained; it is not a substitute for broader security controls.","how":"The simulation checks a sample admin request. Authorized access is routed through the bastion to a private server; direct access to the private server is rejected.","use":"Administrative access to isolated private workloads where a jump-host pattern is appropriate.","aws":"An EC2 bastion host in a public subnet can provide access to private instances, controlled with security groups and network rules. Alternatives include Systems Manager Session Manager.","controls":[{"name":"admin_authorized","label":"Admin authorized","type":"select","options":[{"value":"true","label":"Yes"},{"value":"false","label":"No"}]},{"name":"direct_access","label":"Attempt direct private access","type":"select","options":[{"value":"true","label":"Yes"},{"value":"false","label":"No"}]}],"diagram":{"nodes":["Admin","Bastion Host","Private Server"],"edges":[[0,1],[1,2]],"note":"Private server access is restricted to a controlled path in this conceptual example."}}
 ]
 
 
-def execute(n):
-    outputs = {
-        1: (
-            "Circuit breaker protected the failing service and returned to CLOSED after recovery.",
-            [
-                "Payment service initially unavailable.",
-                "Request 1 failed.",
-                "Request 2 failed.",
-                "Request 3 failed.",
-                "Failure threshold reached: circuit OPEN.",
-                "Next requests are blocked.",
-                "Recovery test succeeded: circuit CLOSED.",
-            ],
-        ),
-        2: (
-            "Retry recovered from temporary failures on the third attempt.",
-            [
-                "Attempt 1: temporary failure.",
-                "Waiting before retry...",
-                "Attempt 2: temporary failure.",
-                "Waiting before retry...",
-                "Attempt 3: success.",
-            ],
-        ),
-        3: (
-            "Timeout behavior demonstrated. This is a local demonstration, not cancellation of a real remote request.",
-            [
-                "Request started.",
-                "Timeout configured: 1.0 second.",
-                "Simulated service duration: 2.5 seconds.",
-                "Timeout reached: client stops waiting.",
-            ],
-        ),
-        4: (
-            "Lambda event execution and an ECS-style container task were simulated locally; no AWS resources were created.",
-            [
-                "Lambda simulation: event received.",
-                "Function executed: greeting generated.",
-                "Result: Hello, Student!",
-                "ECS simulation: task definition loaded.",
-                "Container task status: RUNNING.",
-                "Container response: Hello from ECS demo.",
-            ],
-        ),
-        5: (
-            "Routing and round-robin distribution demonstrated locally. No external gateway or proxy was deployed.",
-            [
-                "Incoming request: /users -> User backend.",
-                "Incoming request: /orders -> Order backend.",
-                "Load balancer: request 1 -> Web-1.",
-                "Load balancer: request 2 -> Web-2.",
-                "Load balancer: request 3 -> Web-1.",
-                "Load balancer: request 4 -> Web-2.",
-            ],
-        ),
-        6: (
-            "Hub-and-Spoke topology simulated. No virtual networks or route tables were created.",
-            [
-                "Hub: Central Network.",
-                "Spoke-1: Application Network connected to Hub.",
-                "Spoke-2: Database Network connected to Hub.",
-                "Spoke-3: Monitoring Network connected to Hub.",
-                "Traffic is represented as passing through the central Hub.",
-            ],
-        ),
-        7: (
-            "Lift-and-Shift migration represented by copying application configuration with minimal changes.",
-            [
-                "Source environment: On-Premises.",
-                "Application: Demo Web App | Python 1.0 | Port 8080.",
-                "Copying configuration to destination...",
-                "Destination environment: AWS EC2 (simulated).",
-                "Application configuration preserved.",
-            ],
-        ),
-        8: (
-            "Bastion access flow simulated. No SSH session or cloud network was created.",
-            [
-                "Administrator requests access.",
-                "Authentication: SUCCESS.",
-                "Connecting to public-subnet Bastion Host...",
-                "Bastion forwards administrative connection to private server.",
-                "Private server is not directly exposed to the internet.",
-                "Connection simulation: SUCCESS.",
-            ],
-        ),
-    }
-    return outputs.get(n)
-
-
-@app.route("/")
-def home():
+@app.get("/")
+def index():
     return render_template("index.html", labs=LABS)
 
 
-@app.post("/api/lab/<int:lab_id>")
-def run_lab(lab_id):
-    data = execute(lab_id)
-    if data is None:
-        return jsonify(error="Unknown lab"), 404
-    result, logs = data
-    return jsonify(result=result, logs=logs, simulation=lab_id >= 3)
+@app.get("/api/labs")
+def list_labs():
+    return jsonify({"labs": LABS})
+
+
+@app.post("/api/lab/<int:lab_id>/run")
+def run_demo(lab_id):
+    lab = next((item for item in LABS if item["id"] == lab_id), None)
+    if not lab:
+        return jsonify({"success": False, "error": "Lab not found"}), 404
+    try:
+        params = request.get_json(silent=True) or {}
+        result = run_lab(lab_id, params)
+        return jsonify({"success": True, "lab": lab["name"], **result})
+    except (ValueError, TypeError) as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+    except Exception:
+        app.logger.exception("Lab execution failed")
+        return jsonify({"success": False, "error": "Simulation error. Check the application log."}), 500
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=False)
